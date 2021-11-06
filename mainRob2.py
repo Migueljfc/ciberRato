@@ -1,13 +1,17 @@
 import sys
 from croblink import *
 from math import *
+import time
 import xml.etree.ElementTree as ET
 
 CELLROWS=7
 CELLCOLS=14
 
+#last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
-    def __init__(self, rob_name, rob_id, angles, host):
+    
+    initial_state = (0,0)
+    def __init__(self,rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
@@ -45,7 +49,9 @@ class MyRob(CRobLinkAngs):
                 if self.measures.visitingLed==True:
                     state='wait'
                 if self.measures.ground==0:
-                    self.setVisitingLed(True);
+                    self.setVisitingLed(True)
+
+                self.initial_state = (self.measures.x,self.measures.y)
                 self.wander()
             elif state=='wait':
                 self.setReturningLed(True)
@@ -66,12 +72,21 @@ class MyRob(CRobLinkAngs):
         left_id = 1
         right_id = 2
         back_id = 3
-
-        print(self.measures.x, self.measures.y)
-        print(self.measures.compass)
+        #print(initial_state)
+        current_state = (self.measures.x-self.initial_state[0],self.measures.y-self.initial_state[1])
+        #print(last_valid_state)
+        print((current_state[0]-self.initial_state[0])%2)
+        #print(abs(abs(current_state[0]-last_valid_state[0])) ,abs(abs(current_state[1])-last_valid_state[1]))
+        if (current_state[0]%2 == 0.0) or (current_state[1]%2==0.0):
+            #print(current_state)
+            self.searchWall()
+            self.moveHor()
+        else:    
+        #print(current_state)
+        #print(self.measures.x, self.measures.y)
+        #print(self.measures.compass)
         #self.rotateUp()
-        self.searchWall()
-        self.moveHor()
+            self.moveHor()
         
         
 
@@ -81,7 +96,6 @@ class MyRob(CRobLinkAngs):
         self.driveMotors(0.0,0.0)
         if self.measures.compass != 90:
             self.driveMotors(-0.1,+0.1)
-    
     def rotateDown(self):
         if self.measures.compass != -90:
             self.driveMotors(-0.1,+0.1)
@@ -97,33 +111,92 @@ class MyRob(CRobLinkAngs):
     # métodos para descobrir paredes
 
     def searchWall(self):
+        array = []
         center_id = 0 
-        
-        if self.measures.irSensor[center_id] < 2.17:
-            print("Não há parede em frente")
-        else:
-            print("Há parede em frente.")
-        
         back_id = 3
-
-        if self.measures.irSensor[back_id] < 2.17:
-            print("Não há parede atrás")
-        else:
-            print("Há parede atrás")
-
         right_id = 2
-
-        if self.measures.irSensor[right_id] < 2.17:
-            print("Não há parede à direita")
-        else:
-            print("Há parede à direita.")
-
         left_id = 1
+        self.driveMotors(0.0,0.0)
+        if -5 < self.measures.compass < 5 :
+            if self.measures.irSensor[center_id] < 2.17:
+                print("Não há parede em frente")
+            else:
+                print("Há parede em frente.")
 
-        if self.measures.irSensor[left_id] < 2.17:
-            print("Não há parede à esquerda")
-        else:
-            print("Há parede à esquerda.")
+            if self.measures.irSensor[back_id] < 2.17:
+                print("Não há parede atrás")
+            else:
+                print("Há parede atrás")
+
+            if self.measures.irSensor[right_id] < 2.17:
+                print("Não há parede à direita")
+            else:
+                print("Há parede à direita.")
+
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede à esquerda")
+            else:
+                print("Há parede à esquerda.")
+        elif 85 < self.measures.compass < 95:
+            if self.measures.irSensor[right_id] < 2.17:
+                print("Não há parede em frente")
+            else:
+                print("Há parede em frente.")
+
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede atrás")
+            else:
+                print("Há parede atrás")
+
+            if self.measures.irSensor[back_id] < 2.17:
+                print("Não há parede à direita")
+            else:
+                print("Há parede à direita.")
+
+            if self.measures.irSensor[center_id] < 2.17:
+                print("Não há parede à esquerda")
+            else:
+                print("Há parede à esquerda.")
+        elif -175 < self.measures.compass < 175:
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede em frente")
+            else:
+                print("Há parede em frente.")
+
+            if self.measures.irSensor[right_id] < 2.17:
+                print("Não há parede atrás")
+            else:
+                print("Há parede atrás")
+
+            if self.measures.irSensor[center_id] < 2.17:
+                print("Não há parede à direita")
+            else:
+                print("Há parede à direita.")
+
+            if self.measures.irSensor[back_id] < 2.17:
+                print("Não há parede à esquerda")
+            else:
+                print("Há parede à esquerda.")
+        elif -85 < self.measures.compass < -95:
+            if self.measures.irSensor[right_id] < 2.17:
+                print("Não há parede em frente")
+            else:
+                print("Há parede em frente.")
+
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede atrás")
+            else:
+                print("Há parede atrás")
+
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede à direita")
+            else:
+                print("Há parede à direita.")
+
+            if self.measures.irSensor[right_id] < 2.17:
+                print("Não há parede à esquerda")
+            else:
+                print("Há parede à esquerda.")
 
     # mover o robot
 
