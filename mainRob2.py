@@ -77,17 +77,19 @@ class MyRob(CRobLinkAngs):
         #print(last_valid_state)
         print((current_state[0]-self.initial_state[0])%2)
         #print(abs(abs(current_state[0]-last_valid_state[0])) ,abs(abs(current_state[1])-last_valid_state[1]))
-        if (current_state[0]%2 == 0.0) or (current_state[1]%2==0.0):
+        if ((current_state[0]%2*10) == 0.0) or ((current_state[1]*10)%2==0.0):
             #print(current_state)
             self.searchWall(current_state)
-            print("EWALKFLKAJFGKAFGIOAJFGLAGJIAPÇ")
+            print("DICIONARIO")
             print(self.walls)
+            print("\n")
             self.moveHor()
         else:    
         #print(current_state)
         #print(self.measures.x, self.measures.y)
         #print(self.measures.compass)
         #self.rotateUp()
+            print("EEEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEE\n")
             self.moveHor()
         
         
