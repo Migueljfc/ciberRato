@@ -9,7 +9,7 @@ CELLCOLS=14
 
 #last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
-    
+    walls = {}
     initial_state = (0,0)
     def __init__(self,rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
@@ -79,7 +79,9 @@ class MyRob(CRobLinkAngs):
         #print(abs(abs(current_state[0]-last_valid_state[0])) ,abs(abs(current_state[1])-last_valid_state[1]))
         if (current_state[0]%2 == 0.0) or (current_state[1]%2==0.0):
             #print(current_state)
-            self.searchWall()
+            self.searchWall(current_state)
+            print("EWALKFLKAJFGKAFGIOAJFGLAGJIAPÇ")
+            print(self.walls)
             self.moveHor()
         else:    
         #print(current_state)
@@ -110,8 +112,8 @@ class MyRob(CRobLinkAngs):
 
     # métodos para descobrir paredes
 
-    def searchWall(self):
-        array = []
+    def searchWall(self,state):
+        list = []
         center_id = 0 
         back_id = 3
         right_id = 2
@@ -120,86 +122,112 @@ class MyRob(CRobLinkAngs):
         if -5 < self.measures.compass < 5 :
             if self.measures.irSensor[center_id] < 2.17:
                 print("Não há parede em frente")
+                list.append(0)
             else:
                 print("Há parede em frente.")
-
+                list.append(1)
             if self.measures.irSensor[back_id] < 2.17:
                 print("Não há parede atrás")
+                list.append(0)
             else:
                 print("Há parede atrás")
-
+                list.append(1)
             if self.measures.irSensor[right_id] < 2.17:
                 print("Não há parede à direita")
+                list.append(0)
             else:
                 print("Há parede à direita.")
-
+                list.append(1)
             if self.measures.irSensor[left_id] < 2.17:
                 print("Não há parede à esquerda")
+                list.append(0)
             else:
                 print("Há parede à esquerda.")
+                list.append(1)
         elif 85 < self.measures.compass < 95:
             if self.measures.irSensor[right_id] < 2.17:
                 print("Não há parede em frente")
+                list.append(0)
             else:
                 print("Há parede em frente.")
+                list.append(1)
 
             if self.measures.irSensor[left_id] < 2.17:
                 print("Não há parede atrás")
+                list.append(0)
             else:
                 print("Há parede atrás")
+                list.append(1)
 
             if self.measures.irSensor[back_id] < 2.17:
                 print("Não há parede à direita")
+                list.append(0)
             else:
                 print("Há parede à direita.")
+                list.append(1)
 
             if self.measures.irSensor[center_id] < 2.17:
                 print("Não há parede à esquerda")
+                list.append(0)
             else:
                 print("Há parede à esquerda.")
+                list.append(1)
         elif -175 < self.measures.compass < 175:
-            if self.measures.irSensor[left_id] < 2.17:
+            if self.measures.irSensor[back_id] < 2.17:
                 print("Não há parede em frente")
+                list.append(0)
             else:
                 print("Há parede em frente.")
+                list.append(1)
+            if self.measures.irSensor[center_id] < 2.17:
+                print("Não há parede atrás")
+                list.append(0)
+            else:
+                print("Há parede atrás")
+                list.append(1)
+
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede à direita")
+                list.append(0)
+            else:
+                print("Há parede à direita.")
+                list.append(1)
+            if self.measures.irSensor(right_id) < 2.17:
+                print("Não há parede à esquerda")
+                list.append(0)
+            else:
+                print("Há parede à esquerda.")
+                list.append(1)
+        elif -85 < self.measures.compass < -95:
+            if self.measures.irSensor[left_id] < 2.17:
+                print("Não há parede em frente")
+                list.append(0)
+            else:
+                print("Há parede em frente.")
+                list.append(1)
 
             if self.measures.irSensor[right_id] < 2.17:
                 print("Não há parede atrás")
+                list.append(0)
             else:
                 print("Há parede atrás")
+                list.append(1)
 
             if self.measures.irSensor[center_id] < 2.17:
                 print("Não há parede à direita")
+                list.append(0)
             else:
                 print("Há parede à direita.")
+                list.append(1)
 
             if self.measures.irSensor[back_id] < 2.17:
                 print("Não há parede à esquerda")
+                list.append(0)
             else:
                 print("Há parede à esquerda.")
-        elif -85 < self.measures.compass < -95:
-            if self.measures.irSensor[right_id] < 2.17:
-                print("Não há parede em frente")
-            else:
-                print("Há parede em frente.")
-
-            if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede atrás")
-            else:
-                print("Há parede atrás")
-
-            if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede à direita")
-            else:
-                print("Há parede à direita.")
-
-            if self.measures.irSensor[right_id] < 2.17:
-                print("Não há parede à esquerda")
-            else:
-                print("Há parede à esquerda.")
-
+                list.append(1)
     # mover o robot
-
+        self.walls[state] = list
     def moveHor(self):
         self.driveMotors(0.01,0.01)        
     
