@@ -10,6 +10,7 @@ CELLCOLS=14
 #last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
     walls = {}
+    goal_state = (0,0)
     initial_state = (0,0)
     def __init__(self,rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
@@ -72,50 +73,73 @@ class MyRob(CRobLinkAngs):
         left_id = 1
         right_id = 2
         back_id = 3
-        #print(initial_state)
-        current_state = (self.measures.x-self.initial_state[0],self.measures.y-self.initial_state[1])
-        #print(last_valid_state)
-        print((current_state[0]-self.initial_state[0])%2)
-        #print(abs(abs(current_state[0]-last_valid_state[0])) ,abs(abs(current_state[1])-last_valid_state[1]))
-        if ((current_state[0]%2*10) == 0.0) or ((current_state[1]*10)%2==0.0):
-            #print(current_state)
-            self.searchWall(current_state)
-            print("DICIONARIO")
-            print(self.walls)
-            print("\n")
-            self.moveHor()
-        else:    
-        #print(current_state)
-        #print(self.measures.x, self.measures.y)
-        #print(self.measures.compass)
-        #self.rotateUp()
-            print("EEEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEE\n")
-            self.moveHor()
-        
-        
 
+        current_state = (self.measures.x-self.initial_state[0],self.measures.y-self.initial_state[1])
+        print(current_state)
+        #if ((current_state[0]*10)%2) == 0.0 or ((current_state[1]*10)%2) == 0.0:
+            #self.moveHor()
+        list = self.searchWall(current_state)
+        print("ESTOU AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+        if list[0] == 0 :
+            print("0000000000000000000000000000000000000000000000000000")
+            self.goal_state = (self.goal_state[0] + 0.2, self.goal_state[1])
+            self.moveHor()
+        elif list[2] == 0 :
+            print("222222222222222222222222222222222222222222222222222222222")
+            self.goal_state = (self.goal_state[0], self.goal_state[1]- 0.2)    
+            self.moveVer()
+        elif list[1] == 0 :
+            print("1111111111111111111111111111111111111111111111111")
+            self.goal_state = (self.goal_state[0] - 0.2, self.goal_state[1])
+            self.moveHor()
+        elif list[3] == 0:
+            print("3333333333333333333333333333333333333333333333333333333333")
+            if self.rotateUp():
+                self.moveVer()
+            """ for i in self.walls:
+            print(i) """
+        else:
+            print("A TUA MAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+            self.moveHor()
+        """ else:    
+            print("EEEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEE\n")
+            self.moveHor() """
+        
 
     # métodos para orientar o robot
     def rotateUp(self):
-        self.driveMotors(0.0,0.0)
-        if self.measures.compass != 90:
+        if self.measures.compass < 85 or self.measures.compass > 95:
             self.driveMotors(-0.1,+0.1)
+            print("cabral<<<<<<<<<<<<<<<<<")
+            return True
+        else:
+            return False
+            
     def rotateDown(self):
-        if self.measures.compass != -90:
+        if self.measures.compass < -95 or self.measures.compass > -85:
             self.driveMotors(-0.1,+0.1)
+            return True
+        else:
+            return False
         
     def rotateLeft(self):
-        if self.measures.compass != 180:
+        if self.measures.compass < -175 or self.measures.compass > 175:
             self.driveMotors(-0.1,+0.1)
+            return True
+        else:
+            return False
 
     def rotateRight(self):
-        if self.measures.compass != 0:
+        if self.measures.compass < -5 or self.measures.compass > 5:
             self.driveMotors(-0.1,+0.1)
+            return True
+        else:
+            return False
 
     # métodos para descobrir paredes
 
     def searchWall(self,state):
-        list = []
+        list = []                   # frente, tras, direita, esquerda
         center_id = 0 
         back_id = 3
         right_id = 2
@@ -228,9 +252,14 @@ class MyRob(CRobLinkAngs):
             else:
                 print("Há parede à esquerda.")
                 list.append(1)
-    # mover o robot
+
         self.walls[state] = list
+        return list
+    
+    # mover o robot
+        
     def moveHor(self):
+        #while self.measures.x - 0.00001 < self.goal_state[0] < self.measures.x + 0.00001:
         self.driveMotors(0.01,0.01)        
     
     def moveVer(self):
@@ -263,7 +292,7 @@ class Map():
                
            i=i+1
 
-rob_name = "pClient1"
+rob_name = "pClient"
 host = "localhost"
 pos = 1
 mapc = None
