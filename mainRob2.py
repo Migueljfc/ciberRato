@@ -1,7 +1,7 @@
 import sys
 from croblink import *
 from math import *
-import time
+import numpy 
 import xml.etree.ElementTree as ET
 
 CELLROWS=7
@@ -9,6 +9,7 @@ CELLCOLS=14
 
 #last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
+    Matrix =  numpy.zeros((28,56),dtype='U1')  
     walls = {}
     goal_state = (0,0)
     initial_state = (0,0)
@@ -75,45 +76,84 @@ class MyRob(CRobLinkAngs):
         back_id = 3
 
         current_state = (self.measures.x-self.initial_state[0],self.measures.y-self.initial_state[1])
-        print(current_state)
+        #print(current_state)
         #if ((current_state[0]*10)%2) == 0.0 or ((current_state[1]*10)%2) == 0.0:
             #self.moveHor()
         list = self.searchWall(current_state)
-        print("ESTOU AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-        if list[0] == 0 :
-            print("0000000000000000000000000000000000000000000000000000")
-            self.goal_state = (self.goal_state[0] + 0.2, self.goal_state[1])
+
+        if list[0] == 1 and list[2] == 1 and list[3] == 0:
+            if self.measures.compass > 85 and self.measures.compass < 95:
+                self.driveMotors(0.0, 0.0)
+                self.moveVer()
+            else:
+                self.driveMotors(-0.01, +0.01)
+        elif list[0] == 1 and list[2] == 0 and list[3] == 1:
+            if self.measures.compass > -85 and self.measures.compass < -95:
+                self.driveMotors(0.0, 0.0)
+                self.moveVer()
+            else:
+                self.driveMotors(-0.01, +0.01)               
+        else:
             self.moveHor()
+
+
+
+        """ self.Matrix[27][1] = 'x'
+        print(self.Matrix)
+        #print(list[0])
+        if list[0] == 1 :
+            #print("0000000000000000000000000000000000000000000000000000")
+            self.goal_state = (self.goal_state[0] + 2, self.goal_state[1])
+            self.moveVer()
+            
+            
+            
+            
+
         elif list[2] == 0 :
             print("222222222222222222222222222222222222222222222222222222222")
-            self.goal_state = (self.goal_state[0], self.goal_state[1]- 0.2)    
-            self.moveVer()
+            self.goal_state = (self.goal_state[0], self.goal_state[1]- 2)  
+            self.rotateUp()
+            self.moveHor()
+            
+            
         elif list[1] == 0 :
             print("1111111111111111111111111111111111111111111111111")
-            self.goal_state = (self.goal_state[0] - 0.2, self.goal_state[1])
+            self.goal_state = (self.goal_state[0] - 2, self.goal_state[1])
             self.moveHor()
         elif list[3] == 0:
             print("3333333333333333333333333333333333333333333333333333333333")
             if self.rotateUp():
                 self.moveVer()
-            """ for i in self.walls:
-            print(i) """
-        else:
-            print("A TUA MAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-            self.moveHor()
-        """ else:    
-            print("EEEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEE\n")
-            self.moveHor() """
+                for i in self.walls:
+                    print(i)  
         
 
-    # métodos para orientar o robot
-    def rotateUp(self):
-        if self.measures.compass < 85 or self.measures.compass > 95:
-            self.driveMotors(-0.1,+0.1)
-            print("cabral<<<<<<<<<<<<<<<<<")
-            return True
         else:
-            return False
+            #print("EEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSEEEEEEEEEEEEE")
+            self.moveHor()
+
+        #print("SAI")
+        sys.exit() """
+                    
+        
+        
+            
+       
+
+
+    # métodos para orientar o robot
+    def rotateUp(self): 
+        for i in range(1000): 
+            
+            #print(self.measures.compass)
+            if self.measures.compass == 90:
+                self.driveMotors(0.0,0.0)
+                print("TA AQUI ")
+                return True
+                
+            else:
+                self.driveMotors(-0.01,+0.01)
             
     def rotateDown(self):
         if self.measures.compass < -95 or self.measures.compass > -85:
@@ -147,110 +187,110 @@ class MyRob(CRobLinkAngs):
         self.driveMotors(0.0,0.0)
         if -5 < self.measures.compass < 5 :
             if self.measures.irSensor[center_id] < 2.17:
-                print("Não há parede em frente")
+                ##print("Não há parede em frente")
                 list.append(0)
             else:
-                print("Há parede em frente.")
+                ##print("Há parede em frente.")
                 list.append(1)
             if self.measures.irSensor[back_id] < 2.17:
-                print("Não há parede atrás")
+                ##print("Não há parede atrás")
                 list.append(0)
             else:
-                print("Há parede atrás")
+                ##print("Há parede atrás")
                 list.append(1)
             if self.measures.irSensor[right_id] < 2.17:
-                print("Não há parede à direita")
+                ##print("Não há parede à direita")
                 list.append(0)
             else:
-                print("Há parede à direita.")
+                ##print("Há parede à direita.")
                 list.append(1)
             if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede à esquerda")
+                #print("Não há parede à esquerda")
                 list.append(0)
             else:
-                print("Há parede à esquerda.")
+                #print("Há parede à esquerda.")
                 list.append(1)
         elif 85 < self.measures.compass < 95:
             if self.measures.irSensor[right_id] < 2.17:
-                print("Não há parede em frente")
+                #print("Não há parede em frente")
                 list.append(0)
             else:
-                print("Há parede em frente.")
+                #print("Há parede em frente.")
                 list.append(1)
 
             if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede atrás")
+                #print("Não há parede atrás")
                 list.append(0)
             else:
-                print("Há parede atrás")
+                #print("Há parede atrás")
                 list.append(1)
 
             if self.measures.irSensor[back_id] < 2.17:
-                print("Não há parede à direita")
+                #print("Não há parede à direita")
                 list.append(0)
             else:
-                print("Há parede à direita.")
+                #print("Há parede à direita.")
                 list.append(1)
 
             if self.measures.irSensor[center_id] < 2.17:
-                print("Não há parede à esquerda")
+                #print("Não há parede à esquerda")
                 list.append(0)
             else:
-                print("Há parede à esquerda.")
+                #print("Há parede à esquerda.")
                 list.append(1)
         elif -175 < self.measures.compass < 175:
             if self.measures.irSensor[back_id] < 2.17:
-                print("Não há parede em frente")
+                #print("Não há parede em frente")
                 list.append(0)
             else:
-                print("Há parede em frente.")
+                #print("Há parede em frente.")
                 list.append(1)
             if self.measures.irSensor[center_id] < 2.17:
-                print("Não há parede atrás")
+                #print("Não há parede atrás")
                 list.append(0)
             else:
-                print("Há parede atrás")
+                #print("Há parede atrás")
                 list.append(1)
 
             if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede à direita")
+                #print("Não há parede à direita")
                 list.append(0)
             else:
-                print("Há parede à direita.")
+                #print("Há parede à direita.")
                 list.append(1)
             if self.measures.irSensor(right_id) < 2.17:
-                print("Não há parede à esquerda")
+                #print("Não há parede à esquerda")
                 list.append(0)
             else:
-                print("Há parede à esquerda.")
+                #print("Há parede à esquerda.")
                 list.append(1)
         elif -85 < self.measures.compass < -95:
             if self.measures.irSensor[left_id] < 2.17:
-                print("Não há parede em frente")
+                #print("Não há parede em frente")
                 list.append(0)
             else:
-                print("Há parede em frente.")
+                #print("Há parede em frente.")
                 list.append(1)
 
             if self.measures.irSensor[right_id] < 2.17:
-                print("Não há parede atrás")
+                #print("Não há parede atrás")
                 list.append(0)
             else:
-                print("Há parede atrás")
+                #print("Há parede atrás")
                 list.append(1)
 
             if self.measures.irSensor[center_id] < 2.17:
-                print("Não há parede à direita")
+                #print("Não há parede à direita")
                 list.append(0)
             else:
-                print("Há parede à direita.")
+                #print("Há parede à direita.")
                 list.append(1)
 
             if self.measures.irSensor[back_id] < 2.17:
-                print("Não há parede à esquerda")
+                #print("Não há parede à esquerda")
                 list.append(0)
             else:
-                print("Há parede à esquerda.")
+                #print("Há parede à esquerda.")
                 list.append(1)
 
         self.walls[state] = list
@@ -259,12 +299,25 @@ class MyRob(CRobLinkAngs):
     # mover o robot
         
     def moveHor(self):
+        self.driveMotors(0.1,0.1)        
         #while self.measures.x - 0.00001 < self.goal_state[0] < self.measures.x + 0.00001:
-        self.driveMotors(0.01,0.01)        
+        if isclose(self.measures.x,self.goal_state[0]) and isclose(self.measures.y,self.goal_state[1]):
+            print("CHEGOU AO SEU DESTINO")
+            self.driveMotors(0.0,0.0)
+            return True
     
     def moveVer(self):
         self.driveMotors(0.01,0.01)
+        
+    def mapping(self):
+        self.Matrix[13,27] == 'X'
+        for i in self.walls:
+            if self.walls == [1]:                 
+                self.Matrix[i[0]+13][i[1]+27] = 'X'
+                self.Matrix[i[0]+14][i[1]+27] = '|'
 
+                
+                
 class Map():
     def __init__(self, filename):
         tree = ET.parse(filename)
