@@ -1,1 +1,1 @@
-Readme é o caralho aqui trabalha-se!
+Hoje é Domingo e ainda não acabei isto!
