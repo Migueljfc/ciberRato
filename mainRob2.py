@@ -86,7 +86,7 @@ class MyRob(CRobLinkAngs):
 
         
         #if ((current_state[0]*10)%2) == 0.0 or ((current_state[1]*10)%2) == 0.0:
-          
+        path = []  
         #print("CURRENT_STATE")
         #print("CURRENT STATE" + str(current_state))
         print("Goal State" + str(self.position_goal))
@@ -97,14 +97,10 @@ class MyRob(CRobLinkAngs):
         print(self.positions)
         self.mapping()
         self.design()
-        for row in self.walls:
-            for elem in row:
-                print(elem,end=' ')
-                    
-            print()
-        if(self.isLooping()):
-            self.pathfind(self.known_pos)
         
+        if(self.isLooping()):
+            path = self.pathfind(self.known_pos)
+            self.follow_path(path)
             print("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOPPPPPPPPPPPPPPPPPPPPPPPPPPP")
         self.positions.clear()
        
@@ -177,13 +173,13 @@ class MyRob(CRobLinkAngs):
         if self.measures.irSensor[center_id] < 1.3:
                 #print("Não há parede em frente")
             self.positions.append(0)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[12-y][27+x] = 'X'
                
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[14-y][27+x] = 'X'
             
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[13-y][26+x] = 'X'
              
             else:
@@ -192,14 +188,14 @@ class MyRob(CRobLinkAngs):
         else:
             #print("Há parede em frente.")
             self.positions.append(1)       
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[12-y][27+x] = '-'
                 self.walls.append((x,y+1))
                 
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[14-y][27+x] = '-'
                 self.walls.append((x,y-1))
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[13-y][26+x] = '|'
                 self.walls.append((x-1,y))
             else:
@@ -208,13 +204,13 @@ class MyRob(CRobLinkAngs):
         if self.measures.irSensor[back_id] < 1.3:
             #print("Não há parede atrás")
             self.positions.append(0)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[14-y][27+x] = 'X'
              
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[12-y][27+x] = 'X'
             
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[13-y][28+x] = 'X'
             
             else:
@@ -223,13 +219,13 @@ class MyRob(CRobLinkAngs):
         else:
             #print("Há parede atrás")
             self.positions.append(1)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[14-y][27+x] = '-'
                 self.walls.append((x,y-1))
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[12-y][27+x] = '-'
                 self.walls.append((x,y+1))
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[13-y][28+x] = '|'
                 self.walls.append((x+1,y))
             else:
@@ -238,13 +234,13 @@ class MyRob(CRobLinkAngs):
         if self.measures.irSensor[right_id] < 1.3:
             #print("Não há parede à direita")
             self.positions.append(0)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[13-y][28+x] = 'X'
                
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[13-y][26+x] = 'X'
               
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[12-y][27+x] = 'X'
                
             else:
@@ -253,13 +249,13 @@ class MyRob(CRobLinkAngs):
         else:
             #print("Há parede à direita.")
             self.positions.append(1)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[13-y][28+x] = '|'
                 self.walls.append((x,y+1))
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[13-y][26+x] = '|'
                 self.walls.append((x,y-1))
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[12-y][27+x] = '-'
                 self.walls.append((x+1,y))
             else:
@@ -268,24 +264,24 @@ class MyRob(CRobLinkAngs):
         if self.measures.irSensor[left_id] < 1.3:
             #print("Não há parede à esquerda")
             self.positions.append(0)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[13-y][26+x] = 'X'
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[14-y][27+x] = 'X'
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[14-y][27+x] = 'X'
             else:
                 self.arr[12-y][27+x] = 'X'
         else:
             #print("Há parede à esquerda.")
             self.positions.append(1)
-            if self.correctCompass() == 90:
+            if self.roundCompass() == 90:
                 self.arr[13-y][26+x] = '|'
                 self.walls.append((x-1,y))
-            elif self.correctCompass() == -90:
+            elif self.roundCompass() == -90:
                 self.arr[13-y][28+x] = '|'
                 self.walls.append((x+1,y))
-            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+            elif self.roundCompass() == 180 or self.roundCompass() == -180:
                 self.arr[14-y][27+x] = '-'
                 self.walls.append((x,y-1))
             else:
@@ -295,21 +291,22 @@ class MyRob(CRobLinkAngs):
         self.visited_pos.append((x,y))
         self.known_pos.append((x,y))
           
-    def errorCorrection(self, direction, pos):
-
-        errorDir = direction - self.measures.compass  # directional error
-        if(self.measures.compass < 0 and direction == 180):
-            errorDir =  - (direction - abs(self.measures.compass))  # directional error
-        if(direction == 0):
-            errorGeo =  pos[1] - self.measures.y #Geographical error
-        elif(direction == 180):
-            errorGeo =  self.measures.y - pos[1]
-        elif(direction == -90):
-            errorGeo =  pos[0] - self.measures.x #Geographical error
+    def errorCalc(self, angle, pos):
+        if(angle == 0):
+            posError =  pos[1] - self.measures.y                
+        elif(angle == 180):
+            posError =  self.measures.y - pos[1]
+        elif(angle == -90):
+            posError =  pos[0] - self.measures.x               
         else:
-            errorGeo =  self.measures.x - pos[0]
+            posError =  self.measures.x - pos[0]
             
-        return errorDir*0.01 + errorGeo*0.1
+        angError = angle - self.measures.compass                
+        
+        if(self.measures.compass < 0 and angle == 180):
+            angError =  - (angle - abs(self.measures.compass))  
+
+        return angError*0.01 + posError*0.1
 
     def mapping(self):
         x = -int(self.initial_state[0] - self.current_state[0])
@@ -317,108 +314,110 @@ class MyRob(CRobLinkAngs):
         self.readSensors()
         if self.positions[0] == 0:
             if self.positions[2] == 1 and self.positions[3] == 1:
-                if self.correctCompass() == 180 or self.correctCompass() == -180:
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == 0:
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == -90:
-                    self.position_goal = self.move(-90,self.current_state)
-                elif self.correctCompass() == 90:
-                    self.position_goal = self.move(90,self.current_state)
+                if self.roundCompass() == 180 or self.roundCompass() == -180:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == 0:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == -90:
+                    self.position_goal = self.calc_next(-90,self.current_state)
+                elif self.roundCompass() == 90:
+                    self.position_goal = self.calc_next(90,self.current_state)
             elif self.positions[2] == 0 and self.positions[3] == 1:
-                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                if self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(90)
-                    self.position_goal = self.move(90,self.current_state)
-                elif self.correctCompass() == 0:
+                    self.position_goal = self.calc_next(90,self.current_state)
+                elif self.roundCompass() == 0:
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)
-                elif self.correctCompass() == -90:
+                    self.position_goal = self.calc_next(-90,self.current_state)
+                elif self.roundCompass() == -90:
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == 90:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == 90:
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
+                    self.position_goal = self.calc_next(0,self.current_state)
             elif self.positions[2] == 1 and self.positions[3] == 0:
-                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                if self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)
-                elif self.correctCompass() == 0:
+                    self.position_goal = self.calc_next(-90,self.current_state)
+                elif self.roundCompass() == 0:
+                    self.not_visited_pos.append((x,y+2))    
+                    self.known_pos.append((x,y+2))
                     self.rotate(90)
-                    self.position_goal = self.move(90,self.current_state)
-                elif self.correctCompass() == -90:
+                    self.position_goal = self.calc_next(90,self.current_state)
+                elif self.roundCompass() == -90:
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == 90:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == 90:
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
+                    self.position_goal = self.calc_next(180,self.current_state)
                 else:
-                    self.position_goal = self.move(0,self.current_state)
+                    self.position_goal = self.calc_next(0,self.current_state)
         elif self.positions[0] == 1:
             if self.positions[1] == 0 and self.positions[2] == 1 and self.positions[3] == 1:
-                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                if self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == 0:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == 0:
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == 90:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == 90:
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)
-                elif self.correctCompass() == -90:
+                    self.position_goal = self.calc_next(-90,self.current_state)
+                elif self.roundCompass() == -90:
                     self.rotate(90)
-                    self.position_goal = self.move(90,self.current_state)
+                    self.position_goal = self.calc_next(90,self.current_state)
             elif self.positions[1] == 0 and self.positions[2] == 1 and self.positions[3] == 0 :
-                if self.correctCompass() == -90:
+                if self.roundCompass() == -90:
                     print("virar aos -90")
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == 0:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == 0:
                     self.rotate(90)
-                    self.position_goal = self.move(90,self.current_state)
-                elif self.correctCompass() == 90:
+                    self.position_goal = self.calc_next(90,self.current_state)
+                elif self.roundCompass() == 90:
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)    
+                    self.position_goal = self.calc_next(-90,self.current_state)    
             elif self.positions[2] == 0 and self.positions[3] == 1:
-                if self.correctCompass() == 90:
+                if self.roundCompass() == 90:
                     print("virar aos 0")
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == 0:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == 0:
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)
-                elif self.correctCompass() == -90:
+                    self.position_goal = self.calc_next(-90,self.current_state)
+                elif self.roundCompass() == -90:
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(90)
-                    self.position_goal = self.move(90,self.current_state)
+                    self.position_goal = self.calc_next(90,self.current_state)
             elif self.positions[2] == 0 and self.positions[3] == 0:                             #falta optar pela outra opçao em cada angulo
-                if self.correctCompass() == 0:
+                if self.roundCompass() == 0:
                     self.not_visited_pos.append((x,y+2))    
                     self.known_pos.append((x,y+2))  
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)         #*E AQUI 
-                elif self.correctCompass() == 90:
+                    self.position_goal = self.calc_next(-90,self.current_state)         #*E AQUI -90
+                elif self.roundCompass() == 90:
                     self.not_visited_pos.append((x+2,y))
                     self.known_pos.append((x+2,y))
                     self.rotate(180)
-                    self.position_goal = self.move(180,self.current_state)
-                elif self.correctCompass() == -90:
+                    self.position_goal = self.calc_next(180,self.current_state)
+                elif self.roundCompass() == -90:
                     self.not_visited_pos.append((x-2,y))
                     self.known_pos.append((x-2,y))
                     self.rotate(0)
-                    self.position_goal = self.move(0,self.current_state)
-                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.position_goal = self.calc_next(0,self.current_state)
+                elif self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.not_visited_pos.append((x,y+2))
                     self.known_pos.append((x,y+2))
                     self.rotate(-90)
-                    self.position_goal = self.move(-90,self.current_state)
+                    self.position_goal = self.calc_next(-90,self.current_state)
         self.current_state = self.position_goal
 
-    def move(self, angle, position):
+    def calc_next(self, angle, position):
         print("MOVE FRONT")
         goalPos = [0,0]
         if angle == 0:
@@ -433,12 +432,14 @@ class MyRob(CRobLinkAngs):
         elif angle == -90:
             print("if4")
             goalPos = [position[0], position[1] - 2]
-        
-        move = True
 
+        return(self.move(goalPos,angle))
+    
+    def move(self,goalPos,angle):
+        move = True
         while move:
             currentPos = (self.measures.x, self.measures.y)
-            err = self.errorCorrection(angle,currentPos)
+            err = self.errorCalc(angle,currentPos)
             self.driveMotors(0.15 - err, 0.15 +err)
             self.readSensors()
             if(angle == 0):
@@ -464,18 +465,33 @@ class MyRob(CRobLinkAngs):
 
         self.driveMotors(0.00,0.00) 
         return goalPos
-        
-    """ def align(self, lin, k, angle):
-        m = pi*(angle/360)
 
-        rot = k * (m - 2.17)
+    def follow_path(self,path):
+        x = -int(self.initial_state[0] - self.current_state[0])
+        y = -int(self.initial_state[1] - self.current_state[1])
+        i = 0
+        while len(path) > 0:     
+            for pos in path:                                                          
+                if (pos[0] - x == 0 and pos[1] - y == 0):
+                    continue
+                elif(pos[0]-x) > 0:                                                    
+                    self.rotate(0)
+                    (x,y) = self.move(pos,0)
+                elif(pos[0]-x) < 0:
+                    self.rotate(180)
+                    (x,y) = self.move(pos,180)
+                elif(pos[1]-y) > 0: 
+                    self.rotate(90)
+                    (x,y) = self.move(pos,90)
+                elif(pos[1]-y) < 0:
+                    self.rotate(-90)
+                    (x,y) =self.move(pos,-90)
+                del path[i]
+                i+=1
+                
+            
 
-        left = lin - (rot/2)
-        right = lin + (rot/2)
-
-        self.driveMotors(left, right) """
-
-    def correctCompass(self):
+    def roundCompass(self):
         if -10 < self.measures.compass < 10:
             return 0
         elif 80 < self.measures.compass < 100:
