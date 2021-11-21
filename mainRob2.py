@@ -1,18 +1,27 @@
 import sys
+from typing import Counter
 from croblink import *
 from math import *
-import numpy 
 import xml.etree.ElementTree as ET
+import aStar as ast
+
 
 CELLROWS=7
 CELLCOLS=14
 
 #last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
-    Matrix =  numpy.zeros((28,56),dtype='U1')  
-    walls = {}
-    goal_state = (0,0)
+    positions = []          # frente, tras, direita, esquerda
+    visited_pos = []
+    known_pos = []
+    walls = []        
+    position_goal = (0,0)
     initial_state = (0,0)
+    current_state = (0,0)    
+    not_visited_pos = []     #posicoes conhecidas para as quais o robo ainda nao foi 
+    arr = [[1 for i in range(55)] for j in range(27)]
+    firstrun = True
+
     def __init__(self,rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
 
@@ -41,6 +50,10 @@ class MyRob(CRobLinkAngs):
                 quit()
 
             if state == 'stop' and self.measures.start:
+                self.initial_state = (self.measures.x,self.measures.y)
+                print("IS = " + str(self.initial_state))
+                self.position_goal = self.initial_state
+                self.current_state = (self.measures.x,self.measures.y)
                 state = stopped_state
 
             if state != 'stop' and self.measures.stop:
@@ -52,9 +65,8 @@ class MyRob(CRobLinkAngs):
                     state='wait'
                 if self.measures.ground==0:
                     self.setVisitingLed(True)
-
-                self.initial_state = (self.measures.x,self.measures.y)
                 self.wander()
+            
             elif state=='wait':
                 self.setReturningLed(True)
                 if self.measures.visitingLed==True:
@@ -62,262 +74,459 @@ class MyRob(CRobLinkAngs):
                 if self.measures.returningLed==True:
                     state='return'
                 self.driveMotors(0.0,0.0)
+            
             elif state=='return':
                 if self.measures.visitingLed==True:
                     self.setVisitingLed(False)
                 if self.measures.returningLed==True:
                     self.setReturningLed(False)
                 self.wander()      
-
+            print("STATE : " + str(state))
     def wander(self):
-        center_id = 0
-        left_id = 1
-        right_id = 2
-        back_id = 3
 
-        current_state = (self.measures.x-self.initial_state[0],self.measures.y-self.initial_state[1])
-        #print(current_state)
+        
         #if ((current_state[0]*10)%2) == 0.0 or ((current_state[1]*10)%2) == 0.0:
-            #self.moveHor()
-        list = self.searchWall(current_state)
-
-        if list[0] == 1 and list[2] == 1 and list[3] == 0:
-            if self.measures.compass > 85 and self.measures.compass < 95:
-                self.driveMotors(0.0, 0.0)
-                self.moveVer()
-            else:
-                self.driveMotors(-0.01, +0.01)
-        elif list[0] == 1 and list[2] == 0 and list[3] == 1:
-            if self.measures.compass > -85 and self.measures.compass < -95:
-                self.driveMotors(0.0, 0.0)
-                self.moveVer()
-            else:
-                self.driveMotors(-0.01, +0.01)               
-        else:
-            self.moveHor()
-
-
-
-        """ self.Matrix[27][1] = 'x'
-        print(self.Matrix)
-        #print(list[0])
-        if list[0] == 1 :
-            #print("0000000000000000000000000000000000000000000000000000")
-            self.goal_state = (self.goal_state[0] + 2, self.goal_state[1])
-            self.moveVer()
-            
-            
-            
-            
-
-        elif list[2] == 0 :
-            print("222222222222222222222222222222222222222222222222222222222")
-            self.goal_state = (self.goal_state[0], self.goal_state[1]- 2)  
-            self.rotateUp()
-            self.moveHor()
-            
-            
-        elif list[1] == 0 :
-            print("1111111111111111111111111111111111111111111111111")
-            self.goal_state = (self.goal_state[0] - 2, self.goal_state[1])
-            self.moveHor()
-        elif list[3] == 0:
-            print("3333333333333333333333333333333333333333333333333333333333")
-            if self.rotateUp():
-                self.moveVer()
-                for i in self.walls:
-                    print(i)  
-        
-
-        else:
-            #print("EEEEEEEEEEEEEEEEEEEEEEEELLLLLLLLLLLLLLLLLLLLLLLLLLSSSSSSSSSSSSSSSEEEEEEEEEEEEE")
-            self.moveHor()
-
-        #print("SAI")
-        sys.exit() """
+          
+        #print("CURRENT_STATE")
+        #print("CURRENT STATE" + str(current_state))
+        print("Goal State" + str(self.position_goal))
+        #self.searchWall(current_state)
+        print("Current State " + str(self.current_state))
+       
+        self.searchWall()
+        print(self.positions)
+        self.mapping()
+        self.design()
+        for row in self.walls:
+            for elem in row:
+                print(elem,end=' ')
                     
+            print()
+        if(self.isLooping()):
+            self.pathfind(self.known_pos)
         
-        
-            
+            print("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOPPPPPPPPPPPPPPPPPPPPPPPPPPP")
+        self.positions.clear()
        
 
-
-    # métodos para orientar o robot
-    def rotateUp(self): 
-        for i in range(1000): 
-            
-            #print(self.measures.compass)
-            if self.measures.compass == 90:
-                self.driveMotors(0.0,0.0)
-                print("TA AQUI ")
-                return True
-                
-            else:
-                self.driveMotors(-0.01,+0.01)
-            
-    def rotateDown(self):
-        if self.measures.compass < -95 or self.measures.compass > -85:
-            self.driveMotors(-0.1,+0.1)
-            return True
-        else:
-            return False
         
-    def rotateLeft(self):
-        if self.measures.compass < -175 or self.measures.compass > 175:
-            self.driveMotors(-0.1,+0.1)
-            return True
-        else:
-            return False
+    def rotate(self, angle):
+        print("ANGLE OF ROTATION " + str(angle))
+        print("COMPASS"+ str(self.measures.compass))
+        if(angle == 90):
+            print("rotating to 90 ")
+            if self.measures.compass >= 90:    
+                while self.measures.compass > 90:
+                    self.driveMotors(+0.1,-0.1)
+                    self.readSensors()
+            else:
+                while self.measures.compass < 90:
+                    self.driveMotors(-0.1,+0.1)
+                    self.readSensors()
+        elif(angle == -90):
+            print("rotating to -90")
+            if self.measures.compass >= 45 or self.measures.compass < -90: 
+                while self.measures.compass >= 45 or self.measures.compass < -90:    
+                    self.driveMotors(-0.1,+0.1)
+                    self.readSensors()
+            else:
+                while self.measures.compass  < 45 and self.measures.compass > -90:    
+                    self.driveMotors(+0.1,-0.1)
+                    self.readSensors()
+        elif(angle == 0):
+            print("rotating to 0")
+            if self.measures.compass <= 0:
+                while self.measures.compass < -1:
+                    self.driveMotors(-0.1,+0.1)
+                    self.readSensors()
+            else: 
+                while self.measures.compass > 1:
+                    self.driveMotors(+0.1,-0.1)
+                    self.readSensors()
+        elif(angle == 180):
+            print("rotating to 180")   
+            if self.measures.compass <= 0 :
+                while self.measures.compass < 177 and self.measures.compass <=0:
+                    self.driveMotors(+0.1,-0.1)
+                    self.readSensors()
+            else:
+                while self.measures.compass > -177 and self.measures.compass >0:
+                    self.driveMotors(-0.1,+0.1)
+                    self.readSensors()
+            
+            
+        
+        self.driveMotors(0.00,-0.00)  
 
-    def rotateRight(self):
-        if self.measures.compass < -5 or self.measures.compass > 5:
-            self.driveMotors(-0.1,+0.1)
-            return True
-        else:
-            return False
 
-    # métodos para descobrir paredes
-
-    def searchWall(self,state):
-        list = []                   # frente, tras, direita, esquerda
+    # método para descobrir paredes
+    def searchWall(self):
         center_id = 0 
         back_id = 3
         right_id = 2
         left_id = 1
-        self.driveMotors(0.0,0.0)
-        if -5 < self.measures.compass < 5 :
-            if self.measures.irSensor[center_id] < 2.17:
-                ##print("Não há parede em frente")
-                list.append(0)
-            else:
-                ##print("Há parede em frente.")
-                list.append(1)
-            if self.measures.irSensor[back_id] < 2.17:
-                ##print("Não há parede atrás")
-                list.append(0)
-            else:
-                ##print("Há parede atrás")
-                list.append(1)
-            if self.measures.irSensor[right_id] < 2.17:
-                ##print("Não há parede à direita")
-                list.append(0)
-            else:
-                ##print("Há parede à direita.")
-                list.append(1)
-            if self.measures.irSensor[left_id] < 2.17:
-                #print("Não há parede à esquerda")
-                list.append(0)
-            else:
-                #print("Há parede à esquerda.")
-                list.append(1)
-        elif 85 < self.measures.compass < 95:
-            if self.measures.irSensor[right_id] < 2.17:
+        x = -int(self.initial_state[0] - self.current_state[0])
+        y = -int(self.initial_state[1] - self.current_state[1])
+        print("X =" + str(x) + "Y =" + str(y))
+        if self.firstrun : 
+            self.arr[13][27] = 'I'
+            self.firstrun = False
+        else: 
+            self.arr[13-y][27+x] = 'X'
+        print("SEARCH WALLS...")
+        if self.measures.irSensor[center_id] < 1.3:
                 #print("Não há parede em frente")
-                list.append(0)
+            self.positions.append(0)
+            if self.correctCompass() == 90:
+                self.arr[12-y][27+x] = 'X'
+               
+            elif self.correctCompass() == -90:
+                self.arr[14-y][27+x] = 'X'
+            
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[13-y][26+x] = 'X'
+             
             else:
-                #print("Há parede em frente.")
-                list.append(1)
+                self.arr[13-y][28+x] = 'X'
+            
+        else:
+            #print("Há parede em frente.")
+            self.positions.append(1)       
+            if self.correctCompass() == 90:
+                self.arr[12-y][27+x] = '-'
+                self.walls.append((x,y+1))
+                
+            elif self.correctCompass() == -90:
+                self.arr[14-y][27+x] = '-'
+                self.walls.append((x,y-1))
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[13-y][26+x] = '|'
+                self.walls.append((x-1,y))
+            else:
+                self.arr [13-y][28+x]= '|'
+                self.walls.append((x+1,y))
+        if self.measures.irSensor[back_id] < 1.3:
+            #print("Não há parede atrás")
+            self.positions.append(0)
+            if self.correctCompass() == 90:
+                self.arr[14-y][27+x] = 'X'
+             
+            elif self.correctCompass() == -90:
+                self.arr[12-y][27+x] = 'X'
+            
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[13-y][28+x] = 'X'
+            
+            else:
+                self.arr[13-y][26+x] = 'X'
+            
+        else:
+            #print("Há parede atrás")
+            self.positions.append(1)
+            if self.correctCompass() == 90:
+                self.arr[14-y][27+x] = '-'
+                self.walls.append((x,y-1))
+            elif self.correctCompass() == -90:
+                self.arr[12-y][27+x] = '-'
+                self.walls.append((x,y+1))
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[13-y][28+x] = '|'
+                self.walls.append((x+1,y))
+            else:
+                self.arr[13-y][26+x] = '|'
+                self.walls.append((x-1,y))
+        if self.measures.irSensor[right_id] < 1.3:
+            #print("Não há parede à direita")
+            self.positions.append(0)
+            if self.correctCompass() == 90:
+                self.arr[13-y][28+x] = 'X'
+               
+            elif self.correctCompass() == -90:
+                self.arr[13-y][26+x] = 'X'
+              
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[12-y][27+x] = 'X'
+               
+            else:
+                self.arr[14-y][27+x] = 'X'
+             
+        else:
+            #print("Há parede à direita.")
+            self.positions.append(1)
+            if self.correctCompass() == 90:
+                self.arr[13-y][28+x] = '|'
+                self.walls.append((x,y+1))
+            elif self.correctCompass() == -90:
+                self.arr[13-y][26+x] = '|'
+                self.walls.append((x,y-1))
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[12-y][27+x] = '-'
+                self.walls.append((x+1,y))
+            else:
+                self.arr[14-y][27+x] = '-'
+                self.walls.append((x,y-1))
+        if self.measures.irSensor[left_id] < 1.3:
+            #print("Não há parede à esquerda")
+            self.positions.append(0)
+            if self.correctCompass() == 90:
+                self.arr[13-y][26+x] = 'X'
+            elif self.correctCompass() == -90:
+                self.arr[14-y][27+x] = 'X'
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[14-y][27+x] = 'X'
+            else:
+                self.arr[12-y][27+x] = 'X'
+        else:
+            #print("Há parede à esquerda.")
+            self.positions.append(1)
+            if self.correctCompass() == 90:
+                self.arr[13-y][26+x] = '|'
+                self.walls.append((x-1,y))
+            elif self.correctCompass() == -90:
+                self.arr[13-y][28+x] = '|'
+                self.walls.append((x+1,y))
+            elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                self.arr[14-y][27+x] = '-'
+                self.walls.append((x,y-1))
+            else:
+                self.arr[12-y][27+x] = '-'
+                self.walls.append((x,y+1))
 
-            if self.measures.irSensor[left_id] < 2.17:
-                #print("Não há parede atrás")
-                list.append(0)
-            else:
-                #print("Há parede atrás")
-                list.append(1)
+        self.visited_pos.append((x,y))
+        self.known_pos.append((x,y))
+          
+    def errorCorrection(self, direction, pos):
 
-            if self.measures.irSensor[back_id] < 2.17:
-                #print("Não há parede à direita")
-                list.append(0)
-            else:
-                #print("Há parede à direita.")
-                list.append(1)
+        errorDir = direction - self.measures.compass  # directional error
+        if(self.measures.compass < 0 and direction == 180):
+            errorDir =  - (direction - abs(self.measures.compass))  # directional error
+        if(direction == 0):
+            errorGeo =  pos[1] - self.measures.y #Geographical error
+        elif(direction == 180):
+            errorGeo =  self.measures.y - pos[1]
+        elif(direction == -90):
+            errorGeo =  pos[0] - self.measures.x #Geographical error
+        else:
+            errorGeo =  self.measures.x - pos[0]
+            
+        return errorDir*0.01 + errorGeo*0.1
 
-            if self.measures.irSensor[center_id] < 2.17:
-                #print("Não há parede à esquerda")
-                list.append(0)
-            else:
-                #print("Há parede à esquerda.")
-                list.append(1)
-        elif -175 < self.measures.compass < 175:
-            if self.measures.irSensor[back_id] < 2.17:
-                #print("Não há parede em frente")
-                list.append(0)
-            else:
-                #print("Há parede em frente.")
-                list.append(1)
-            if self.measures.irSensor[center_id] < 2.17:
-                #print("Não há parede atrás")
-                list.append(0)
-            else:
-                #print("Há parede atrás")
-                list.append(1)
-
-            if self.measures.irSensor[left_id] < 2.17:
-                #print("Não há parede à direita")
-                list.append(0)
-            else:
-                #print("Há parede à direita.")
-                list.append(1)
-            if self.measures.irSensor(right_id) < 2.17:
-                #print("Não há parede à esquerda")
-                list.append(0)
-            else:
-                #print("Há parede à esquerda.")
-                list.append(1)
-        elif -85 < self.measures.compass < -95:
-            if self.measures.irSensor[left_id] < 2.17:
-                #print("Não há parede em frente")
-                list.append(0)
-            else:
-                #print("Há parede em frente.")
-                list.append(1)
-
-            if self.measures.irSensor[right_id] < 2.17:
-                #print("Não há parede atrás")
-                list.append(0)
-            else:
-                #print("Há parede atrás")
-                list.append(1)
-
-            if self.measures.irSensor[center_id] < 2.17:
-                #print("Não há parede à direita")
-                list.append(0)
-            else:
-                #print("Há parede à direita.")
-                list.append(1)
-
-            if self.measures.irSensor[back_id] < 2.17:
-                #print("Não há parede à esquerda")
-                list.append(0)
-            else:
-                #print("Há parede à esquerda.")
-                list.append(1)
-
-        self.walls[state] = list
-        return list
-    
-    # mover o robot
-        
-    def moveHor(self):
-        self.driveMotors(0.1,0.1)        
-        #while self.measures.x - 0.00001 < self.goal_state[0] < self.measures.x + 0.00001:
-        if isclose(self.measures.x,self.goal_state[0]) and isclose(self.measures.y,self.goal_state[1]):
-            print("CHEGOU AO SEU DESTINO")
-            self.driveMotors(0.0,0.0)
-            return True
-    
-    def moveVer(self):
-        self.driveMotors(0.01,0.01)
-        
     def mapping(self):
-        self.Matrix[13,27] == 'X'
-        for i in self.walls:
-            if self.walls == [1]:                 
-                self.Matrix[i[0]+13][i[1]+27] = 'X'
-                self.Matrix[i[0]+14][i[1]+27] = '|'
+        x = -int(self.initial_state[0] - self.current_state[0])
+        y = -int(self.initial_state[1] - self.current_state[1])
+        self.readSensors()
+        if self.positions[0] == 0:
+            if self.positions[2] == 1 and self.positions[3] == 1:
+                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.position_goal = self.move(-90,self.current_state)
+                elif self.correctCompass() == 90:
+                    self.position_goal = self.move(90,self.current_state)
+            elif self.positions[2] == 0 and self.positions[3] == 1:
+                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.rotate(90)
+                    self.position_goal = self.move(90,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == 90:
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+            elif self.positions[2] == 1 and self.positions[3] == 0:
+                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.rotate(90)
+                    self.position_goal = self.move(90,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == 90:
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                else:
+                    self.position_goal = self.move(0,self.current_state)
+        elif self.positions[0] == 1:
+            if self.positions[1] == 0 and self.positions[2] == 1 and self.positions[3] == 1:
+                if self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == 90:
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.rotate(90)
+                    self.position_goal = self.move(90,self.current_state)
+            elif self.positions[1] == 0 and self.positions[2] == 1 and self.positions[3] == 0 :
+                if self.correctCompass() == -90:
+                    print("virar aos -90")
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.rotate(90)
+                    self.position_goal = self.move(90,self.current_state)
+                elif self.correctCompass() == 90:
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)    
+            elif self.positions[2] == 0 and self.positions[3] == 1:
+                if self.correctCompass() == 90:
+                    print("virar aos 0")
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == 0:
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.rotate(90)
+                    self.position_goal = self.move(90,self.current_state)
+            elif self.positions[2] == 0 and self.positions[3] == 0:                             #falta optar pela outra opçao em cada angulo
+                if self.correctCompass() == 0:
+                    self.not_visited_pos.append((x,y+2))    
+                    self.known_pos.append((x,y+2))  
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)         #*E AQUI 
+                elif self.correctCompass() == 90:
+                    self.not_visited_pos.append((x+2,y))
+                    self.known_pos.append((x+2,y))
+                    self.rotate(180)
+                    self.position_goal = self.move(180,self.current_state)
+                elif self.correctCompass() == -90:
+                    self.not_visited_pos.append((x-2,y))
+                    self.known_pos.append((x-2,y))
+                    self.rotate(0)
+                    self.position_goal = self.move(0,self.current_state)
+                elif self.correctCompass() == 180 or self.correctCompass() == -180:
+                    self.not_visited_pos.append((x,y+2))
+                    self.known_pos.append((x,y+2))
+                    self.rotate(-90)
+                    self.position_goal = self.move(-90,self.current_state)
+        self.current_state = self.position_goal
 
-                
-                
+    def move(self, angle, position):
+        print("MOVE FRONT")
+        goalPos = [0,0]
+        if angle == 0:
+            print("if1")
+            goalPos = [position[0] + 2, position[1]]   
+        elif angle == 180 or angle == -180:
+            print("if2")
+            goalPos = [position[0] - 2, position[1]]
+        elif angle == 90:
+            print("if3")
+            goalPos = [position[0], position[1] + 2]
+        elif angle == -90:
+            print("if4")
+            goalPos = [position[0], position[1] - 2]
+        
+        move = True
+
+        while move:
+            currentPos = (self.measures.x, self.measures.y)
+            err = self.errorCorrection(angle,currentPos)
+            self.driveMotors(0.15 - err, 0.15 +err)
+            self.readSensors()
+            if(angle == 0):
+                if(abs(currentPos[0] - goalPos[0]) <= 0.3):
+                    self.driveMotors(0.0,0.0)
+                    print("ANGULO 0")
+                    move  = False
+            elif(angle == 180):
+                if(abs(currentPos[0] - goalPos[0]) <= 0.3):
+                    self.driveMotors(0.0,0.0)
+                    print("ANGULO 180")
+                    move  = False
+            elif(angle == 90):
+                if(abs(currentPos[1] - goalPos[1]) <= 0.3):
+                    self.driveMotors(0.0,0.0)
+                    print("ANGULO 90")
+                    move  = False
+            elif(angle == -90):
+                if(abs(currentPos[1] - goalPos[1]) <= 0.3):
+                    print("ANGULO -90")
+                    self.driveMotors(0.0,0.0)
+                    move  = False          
+
+        self.driveMotors(0.00,0.00) 
+        return goalPos
+        
+    """ def align(self, lin, k, angle):
+        m = pi*(angle/360)
+
+        rot = k * (m - 2.17)
+
+        left = lin - (rot/2)
+        right = lin + (rot/2)
+
+        self.driveMotors(left, right) """
+
+    def correctCompass(self):
+        if -10 < self.measures.compass < 10:
+            return 0
+        elif 80 < self.measures.compass < 100:
+            return 90
+        elif -100 < self.measures.compass < -80:
+            return -90
+        elif self.measures.compass <= -170 or self.measures.compass >= 170:
+            return 180 * self.measures.compass / abs(self.measures.compass)
+
+    def pathfind(self,maze):
+        visited = True
+        while(visited):
+            pos = self.not_visited_pos.pop()
+            if pos not in self.visited_pos:
+                print(str(pos) + "NAO VISITEI ESSE :OOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+                visited = False
+            else:
+                print(str(pos) + "JA VISITEI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        x = -int(self.initial_state[0] - self.current_state[0])
+        y = -int(self.initial_state[1] - self.current_state[1])
+        
+        path = ast.astar(maze,(x,y),pos,self.walls)
+        print(path)
+        return path
+
+    def design(self):
+        f= open("mapping.out", "w")
+        for row in self.arr:
+            for elem in row:
+                if(elem == 1):
+                    f.write(' ')
+                else:
+                    f.write(elem)
+                    
+            f.write('\n')
+
+    def isLooping(self):
+        possibleLoop = 0
+        c = Counter(self.visited_pos)
+        for i in c:
+            if c[i] >= 2:
+                possibleLoop+=1
+            else:
+                possibleLoop = 0
+            if possibleLoop == 5:
+                return True
+            
+        
+           
+        
+
 class Map():
     def __init__(self, filename):
         tree = ET.parse(filename)
