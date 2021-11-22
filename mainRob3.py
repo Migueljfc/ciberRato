@@ -21,7 +21,7 @@ class MyRob(CRobLinkAngs):
     not_visited_pos = []     #posicoes conhecidas para as quais o robo ainda nao foi 
     arr = [[1 for i in range(55)] for j in range(27)]   #array que vai desenhar o mapa
     firstrun = True          #variavel que indica se é o primeiro ciclo para colocar no array I em vez de X
-    isLooping = False   
+    isLooping = False
     def __init__(self,rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
 
@@ -80,10 +80,12 @@ class MyRob(CRobLinkAngs):
                 if self.measures.returningLed==True:
                     self.setReturningLed(False)
                 self.wander()      
+            print("STATE : " + str(state))
             
     def wander(self):
 
         path = []  
+       
         print(self.walls)
         self.mapping()
         self.design()
@@ -99,7 +101,7 @@ class MyRob(CRobLinkAngs):
         print("ANGLE OF ROTATION " + str(angle))
         print("COMPASS"+ str(self.measures.compass))
         if(angle == 90):
-            #print("rotating to 90 ")
+            print("rotating to 90 ")
             if self.measures.compass >= 90:    
                 while self.measures.compass > 90:
                     self.driveMotors(+0.1,-0.1)
@@ -109,7 +111,7 @@ class MyRob(CRobLinkAngs):
                     self.driveMotors(-0.1,+0.1)
                     self.readSensors()
         elif(angle == -90):
-            #print("rotating to -90")
+            print("rotating to -90")
             if self.measures.compass >= 45 or self.measures.compass < -90: 
                 while self.measures.compass >= 45 or self.measures.compass < -90:    
                     self.driveMotors(-0.1,+0.1)
@@ -119,7 +121,7 @@ class MyRob(CRobLinkAngs):
                     self.driveMotors(+0.1,-0.1)
                     self.readSensors()
         elif(angle == 0):
-            #print("rotating to 0")
+            print("rotating to 0")
             if self.measures.compass <= 0:
                 while self.measures.compass < -1:
                     self.driveMotors(-0.1,+0.1)
@@ -129,7 +131,7 @@ class MyRob(CRobLinkAngs):
                     self.driveMotors(+0.1,-0.1)
                     self.readSensors()
         elif(angle == 180):
-            #print("rotating to 180")   
+            print("rotating to 180")   
             if self.measures.compass <= 0 :
                 while self.measures.compass < 177 and self.measures.compass <=0:
                     self.driveMotors(+0.1,-0.1)
@@ -329,11 +331,11 @@ class MyRob(CRobLinkAngs):
                 if self.roundCompass() == 180 or self.roundCompass() == -180:
                     self.rotate(-90)
                     self.position_goal = self.calc_next(-90,self.current_state)
-                    """ elif self.roundCompass() == 0:
+                elif self.roundCompass() == 0:
                     self.not_visited_pos.append((x,y+2))    
                     self.known_pos.add((x,y+2))
                     self.rotate(90)
-                    self.position_goal = self.calc_next(90,self.current_state) """
+                    self.position_goal = self.calc_next(90,self.current_state)
                 elif self.roundCompass() == -90:
                     self.rotate(0)
                     self.position_goal = self.calc_next(0,self.current_state)
@@ -386,8 +388,8 @@ class MyRob(CRobLinkAngs):
                 if self.roundCompass() == 0:
                     self.not_visited_pos.append((x,y+2))    
                     self.known_pos.add((x,y+2))  
-                    self.rotate(90)
-                    self.position_goal = self.calc_next(90,self.current_state)         
+                    self.rotate(-90)
+                    self.position_goal = self.calc_next(-90,self.current_state)         
                 elif self.roundCompass() == 90:
                     self.not_visited_pos.append((x+2,y))
                     self.known_pos.add((x+2,y))
@@ -406,19 +408,18 @@ class MyRob(CRobLinkAngs):
         self.current_state = self.position_goal
 
     def calc_next(self, angle, position):
-        #print("MOVE FRONT")
         goalPos = [0,0]
         if angle == 0:
-            #print("if1")
+            
             goalPos = [position[0] + 2, position[1]]   
         elif angle == 180 or angle == -180:
-            #print("if2")
+           
             goalPos = [position[0] - 2, position[1]]
         elif angle == 90:
-            #print("if3")
+            
             goalPos = [position[0], position[1] + 2]
         elif angle == -90:
-            #print("if4")
+           
             goalPos = [position[0], position[1] - 2]
 
         return(self.move(goalPos,angle))
@@ -431,23 +432,22 @@ class MyRob(CRobLinkAngs):
             self.driveMotors(0.15 - err, 0.15 +err)
             self.readSensors()
             if(angle == 0):
-                if(abs(currentPos[0] - goalPos[0]) < 0.3):
+                if(abs(currentPos[0] - goalPos[0]) <= 0.3):
                     self.driveMotors(0.0,0.0)
                     #print("ANGULO 0")
                     move  = False
-            elif(abs(angle == 180 or angle == -180)):
-                print(goalPos, "sdhdshjshdjh" , currentPos)
-                if(currentPos[0] - goalPos[0] < 0.3):
+            elif(angle == 180 or angle == -180):
+                if(abs(currentPos[0] - goalPos[0]) <= 0.3):
                     self.driveMotors(0.0,0.0)
                     #print("ANGULO 180")
                     move  = False
             elif(angle == 90):
-                if(abs(currentPos[1] - goalPos[1]) < 0.3):
+                if(abs(currentPos[1] - goalPos[1]) <= 0.3):
                     self.driveMotors(0.0,0.0)
                     #print("ANGULO 90")
                     move  = False
             elif(angle == -90):
-                if(abs(currentPos[1] - goalPos[1]) < 0.3):
+                if(abs(currentPos[1] - goalPos[1]) <= 0.3):
                     #print("ANGULO -90")
                     self.driveMotors(0.0,0.0)
                     move  = False          
@@ -462,24 +462,22 @@ class MyRob(CRobLinkAngs):
         y = -int(self.initial_state[1] - self.current_state[1])
         i = 0
         
-
         while len(path) > 0:     
-            for pos in path:   
-                objetivo = [self.current_state[0] - pos[0], self.current_state[1] - pos[1]]                                                    
-                if (objetivo[0] - x == 0 and objetivo[1] - y == 0):
+            for pos in path:                                                          
+                if (pos[0] - x == 0 and pos[1] - y == 0):
                     continue
-                elif(x +objetivo[0]) > 0:                                            
+                elif(pos[0]-x) > 0:                                            
                     self.rotate(0)
-                    (x,y) = self.move(objetivo,0)
-                elif(x +objetivo[0]) < 0:
+                    (x,y) = self.move(pos,0)
+                elif(pos[0]-x) < 0:
                     self.rotate(180)
-                    (x,y) = self.move(objetivo,180)
-                elif(y + objetivo[1]) > 0: 
+                    (x,y) = self.move(pos,180)
+                elif(pos[1]-y) > 0: 
                     self.rotate(90)
-                    (x,y) = self.move(objetivo,90)
-                elif(y + objetivo[1]) < 0:
+                    (x,y) = self.move(pos,90)
+                elif(pos[1]-y) < 0:
                     self.rotate(-90)
-                    (x,y) =self.move(objetivo,-90)
+                    (x,y) =self.move(pos,-90)
                 del path[i]
                 i+=1
         self.isLooping = False 
@@ -501,14 +499,16 @@ class MyRob(CRobLinkAngs):
             goal = self.not_visited_pos.pop()
             if goal not in self.visited_pos:
                 visited = False
-            
+            else:
+                print(str(goal) + "JA VISITEI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         x = -int(self.initial_state[0] - self.current_state[0])
         y = -int(self.initial_state[1] - self.current_state[1])
         
         start = (x,y)
-        
+
         test =  (6,0)
         path = astar(start,goal,maze,self.walls)
+
         path = list(reversed(path))
         
         return path
