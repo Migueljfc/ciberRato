@@ -26,10 +26,11 @@ class MyRob(CRobLinkAngs):
     last_pos = (0.0,0.0)
     lastOut = (0.0,0.0)          #ultimo parametro enviado para o driveMotors  
     current_cell = (0,0)     #celula 
-    center = False         # é preciso centrar
-    current_motors = (0,0)
     beacons = {}
-    
+    pathBeacons = []            #posicoes que fazem o caminho mais curto entre os targets
+    beaconId = []
+    path = [] 
+
     def __init__(self,rob_name, rob_id, angles, host, filename):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host,filename)
         
@@ -112,6 +113,12 @@ class MyRob(CRobLinkAngs):
         if(self.isLooping):
             path = self.pathfind(self.known_pos)
             self.follow_path(path)
+
+        if (int)(self.simTime)-(self.measures.time) < 400:
+            path = self.path_to_zero(self.visited_pos)
+            print("PATH",path)
+            self.follow_path(path)
+            self.finish()
         self.positions.clear()
        
 
@@ -463,28 +470,15 @@ class MyRob(CRobLinkAngs):
             goalPos = [position[0], position[1] - 2]
             self.current_cell = (self.current_cell[0],self.current_cell[1] - 1)
 
-        return(self.move(self.current_state,goalPos,angle))
+        return(self.move(goalPos,angle))
     
-    def move(self,currentPos,goalPos,angle):
+    def move(self,goalPos,angle):
         move = True
         while move:
             #if self.roundCompass() == 0 or self.roundCompass == 180:
             currentPos = self.align(0.07,self.measures.compass,0.01,self.roundCompass())
             #self.align(0.10,self.measures.compass,0.01,self.roundCompass())
             #currentPos = self.next_pos_calc()
-            """ else:
-                self.driveMotors(0.05,0.05)
-                self.current_motors = (0.05,0.05)
-                currentPos = self.next_pos_calc() """
-            """ err = self.compassErrCalc(angle)
-            if not self.center:
-                errgps = self.GpsErrorCalc()
-                currentPos = self.next_pos_calc()
-                self.lastOut = (0.05 - (err + errgps) , 0.05 + (err + errgps))
-            else:
-                self.driveMotors(0.05 - err , 0.05 + err)
-                currentPos = self.next_pos_calc()
-                self.lastOut = (0.05 - err ,0.05 + err ) """
 
             self.readSensors()
             # print("Current State = "+ str(currentPos))
@@ -494,7 +488,7 @@ class MyRob(CRobLinkAngs):
             # print("Diference = " + str(dif))
             # print("_________________________________________________________")
             #print("Diference = ",(abs(currentPos[0] - goalPos[0]),abs(currentPos[1] - goalPos[1])))
-            print("goalPos = ", [round(goalPos[0]),round(goalPos[1])])
+            #print("goalPos = ", [round(goalPos[0]),round(goalPos[1])])
             if(angle == 0):
                 #err = self.compassErrCalc(angle)
                 if(abs(currentPos[0] - round(goalPos[0])) < 0.1):
@@ -693,8 +687,24 @@ class MyRob(CRobLinkAngs):
             if goal not in self.visited_pos:
                 visited = False
             
-        x = -int(self.initial_state[0] - self.current_state[0])
-        y = -int(self.initial_state[1] - self.current_state[1])
+        x = int(self.current_state[0])
+        y = int(self.current_state[1])
+        
+        start = (x,y)
+        
+        path = astar(start,goal,maze,self.walls)
+        path = list(reversed(path))
+        
+        print("path: " , path)
+
+        return path
+    
+    def path_to_zero(self,maze):
+       
+        goal = (0,0)
+            
+        x = int(self.current_state[0])
+        y = int(self.current_state[1])
         
         start = (x,y)
         
@@ -728,8 +738,8 @@ class MyRob(CRobLinkAngs):
     #             self.isLooping = True
 
     def isLoop(self):
-        x = -int(self.initial_state[0] - self.current_state[0])
-        y = -int(self.initial_state[1] - self.current_state[1])
+        x = int(self.current_state[0])
+        y = int(self.current_state[1])
 
         #print("VISITED POS: " , self.visited_pos)
 

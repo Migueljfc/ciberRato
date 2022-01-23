@@ -27,8 +27,8 @@ class MyRob(CRobLinkAngs):
     beaconId = []
     path = [] 
 
-    def __init__(self,rob_name, rob_id, angles, host):
-        CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
+    def __init__(self,rob_name, rob_id, angles, host,filename):
+        CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host, filename)
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
     # to know if there is a wall on top of cell(i,j) (i in 0..5), check if the value of labMap[i*2+1][j*2] is space or not
@@ -575,7 +575,7 @@ class MyRob(CRobLinkAngs):
         return False
 
     def pathWrite(self):
-        f = open("path.out", "w")
+        f = open(self.filename + ".path", "w")
         for i in self.pathBeacons:
             f.write(str(i[0]) + " " + str(i[1]))
             if i in self.beacons.keys():
@@ -584,7 +584,7 @@ class MyRob(CRobLinkAngs):
             f.write("\n")
 
     def design(self):
-        f= open("mapping.out", "w")
+        f= open(self.filename + ".map", "w")
         for row in self.arr:
             for elem in row:
                 if(elem == 1):
@@ -648,22 +648,24 @@ rob_name = "pClient"
 host = "localhost"
 pos = 1
 mapc = None
-
+filename = "mapping"
 for i in range(1, len(sys.argv),2):
     if (sys.argv[i] == "--host" or sys.argv[i] == "-h") and i != len(sys.argv) - 1:
         host = sys.argv[i + 1]
     elif (sys.argv[i] == "--pos" or sys.argv[i] == "-p") and i != len(sys.argv) - 1:
         pos = int(sys.argv[i + 1])
-    elif (sys.argv[i] == "--robname" or sys.argv[i] == "-p") and i != len(sys.argv) - 1:
+    elif (sys.argv[i] == "--robname" or sys.argv[i] == "-r") and i != len(sys.argv) - 1:
         rob_name = sys.argv[i + 1]
     elif (sys.argv[i] == "--map" or sys.argv[i] == "-m") and i != len(sys.argv) - 1:
         mapc = Map(sys.argv[i + 1])
+    elif (sys.argv[i] == "--file" or sys.argv[i] == "-f") and i != len(sys.argv) - 1:
+        filename = str((sys.argv[i + 1]))
     else:
         print("Unkown argument", sys.argv[i])
         quit()
 
 if __name__ == '__main__':
-    rob=MyRob(rob_name,pos,[0.0,90.0,-90.0,180.0],host)
+    rob=MyRob(rob_name,pos,[0.0,90.0,-90.0,180.0],host,filename)
     if mapc != None:
         rob.setMap(mapc.labMap)
         rob.printMap()
