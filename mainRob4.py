@@ -1,16 +1,14 @@
-from pickle import FALSE
 import sys
-from typing import Counter
 from croblink import *
 from math import *
 import xml.etree.ElementTree as ET
 from astar import *
+from itertools import permutations
 
 
 CELLROWS=7
 CELLCOLS=14
 
-#last_valid_state = (0,0)  
 class MyRob(CRobLinkAngs):
     positions = []           #lista em que 1 é ter parede e 0 é nao ter em cada posicao goal com a seguinte estrutura [frente, tras, direita, esquerda]
     visited_pos = []         #lista com as posiçoes visitadas
@@ -110,14 +108,18 @@ class MyRob(CRobLinkAngs):
         #print(self.walls)
         self.design()
         self.isLoop()
-        if(self.isLooping):
-            path = self.pathfind(self.known_pos)
-            self.follow_path(path)
+        while(self.isLooping):
+            self.path = self.pathfind(self.known_pos)
+            if self.path == None:
+                self.pathToBeacon()
+                self.pathWrite() 
+            else:
+                self.follow_path()
 
         if (int)(self.simTime)-(self.measures.time) < 400:
-            path = self.path_to_zero(self.visited_pos)
-            print("PATH",path)
-            self.follow_path(path)
+            self.path = self.path_to_zero(self.visited_pos)
+            print("PATH", self.path)
+            self.follow_path()
             self.finish()
         self.positions.clear()
        
@@ -628,16 +630,16 @@ class MyRob(CRobLinkAngs):
 
         #self.current_state = (round(self.current_state[0]),round(self.current_state[1]))
         #return self.current_state
-    def follow_path(self,path):
+    def follow_path(self):
         print("LOOP IS TRUE")
 
-        while len(path) > 0:
+        while len(self.path) > 0:
             x2 = int(self.current_state[0] - self.initial_state[0])
             y2 = int(self.current_state[1] - self.initial_state[1])
 
             print("x2: " , x2 , "y2: " , y2)    # 12, -8
 
-            pos = path.pop(0)
+            pos = self.path.pop(0)
             objetivo = [self.initial_state[0] + pos[0] , self.initial_state[1] + pos[1]]
             
             print("obj_x: " , int(objetivo[0] - self.initial_state[0]), "obj_y: ", int(objetivo[1] - self.initial_state[1])) 
@@ -667,7 +669,7 @@ class MyRob(CRobLinkAngs):
 
         print("LOOOP IS FALSE")
         self.isLooping = False
-        path.clear()
+        self.path.clear()
             
 
     def roundCompass(self):
@@ -682,22 +684,26 @@ class MyRob(CRobLinkAngs):
 
     def pathfind(self,maze):
         visited = True
+
+        if len(self.not_visited_pos) == 0 or self.isDone():
+            self.finish()
+            visited = False
+            return None
+        
         while(visited):
-            goal = self.not_visited_pos.pop()
+            goal = self.not_visited_pos.pop(-1)
             if goal not in self.visited_pos:
                 visited = False
             
-        x = int(self.current_state[0])
-        y = int(self.current_state[1])
-        
+        x = -int(self.initial_state[0] - self.current_state[0])
+        y = -int(self.initial_state[1] - self.current_state[1])
+
         start = (x,y)
         
-        path = astar(start,goal,maze,self.walls)
-        path = list(reversed(path))
-        
-        print("path: " , path)
+        self.path = astar(start,goal,maze,self.walls)
+        self.path = list(reversed(self.path))
 
-        return path
+        return self.path
     
     def path_to_zero(self,maze):
        
@@ -714,6 +720,52 @@ class MyRob(CRobLinkAngs):
         print("path: " , path)
 
         return path
+    
+    def pathToBeacon(self):
+        #self.beacons.popitem()
+        listaPos = list(self.beacons.keys())
+        #print("LEN: ", len(listaPos))
+        #print("LISTA ANTES DE FOR: ", listaPos)
+        for i in range(1,len(self.beacons.values())):
+            self.beaconId.append(i)
+        
+        #print("BEACON: ", self.beaconId)
+        perm = list(permutations(self.beaconId))
+        
+        #print("PERM: ", perm
+
+        for i in perm:
+            firstPos = astar((0,0),listaPos[i[0]],self.visited_pos,self.walls)
+            oldBeacon = listaPos[i[0]]
+            for k in range(1,len(i)):
+                firstPos = astar(oldBeacon, listaPos[i[k]], self.visited_pos, self.walls) + firstPos
+                oldBeacon = listaPos[i[k]]
+            firstPos = astar(oldBeacon, (0,0), self.visited_pos, self.walls) + firstPos  
+            if len(self.pathBeacons) == 0:
+                self.pathBeacons = firstPos.copy()
+            elif len(self.pathBeacons) == len(firstPos):
+                self.pathBeacons = firstPos.copy()
+
+    def isDone(self):
+        count = 0
+        for i in self.not_visited_pos:
+            if i in self.visited_pos:
+                count += 1
+        
+        if count == len(self.not_visited_pos):
+            return True
+
+        return False
+
+    def pathWrite(self):
+        f = open("path.out", "w")
+        for i in self.pathBeacons:
+            f.write(str(i[0]) + " " + str(i[1]))
+            if i in self.beacons.keys():
+                num = self.beacons.get(i)
+                f.write(" #" + str(num))
+            f.write("\n")
+        f.write('0 0')
 
     def design(self):
         f= open(self.filename + ".map", "w")
